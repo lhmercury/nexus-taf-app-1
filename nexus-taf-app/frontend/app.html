@@ -1,4 +1,3 @@
-window.NEXUS_CONFIG = { apiBase: 'https://nexus-taf-api.onrender.com/api' };
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -17,9 +16,7 @@ window.NEXUS_CONFIG = { apiBase: 'https://nexus-taf-api.onrender.com/api' };
   // apunta el frontend a la URL pública de tu backend en producción.
   // En local, deja el valor por defecto (backend corriendo en :4000).
   // ------------------------------------------------------------------
-  window.NEXUS_CONFIG = {
-    apiBase: (localStorage.getItem('nexus_taf_api_override')) || 'http://localhost:4000/api'
-  };
+  window.NEXUS_CONFIG = { apiBase: 'https://nexus-taf-api-1.onrender.com/api' };
 </script>
 </head>
 <body>
