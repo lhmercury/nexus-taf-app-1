@@ -1,0 +1,1918 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS-TAF · Ecosistema Digital de Consultores TAF</title>
+<meta name="description" content="NEXUS-TAF: plataforma digital de Consultores TAF para gestión de consultoría multidimensional. Arquitectura híbrida, base de datos PostgreSQL + MongoDB y módulos de seguridad, operación, cliente e inteligencia de negocio.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   NEXUS-TAF — Design tokens
+   Firma visual: "Esquema Híbrido" — red rígida (SQL / relacional)
+   que se disuelve en nodos orgánicos (NoSQL / documental),
+   unidas por una capa de sincronización. Ese lenguaje visual
+   recorre el hero, los divisores de sección y la sección de
+   Base de Datos.
+   ============================================================ */
+:root{
+  --ink:#0A1628;
+  --ink-soft:#101F3A;
+  --ink-softer:#152A4C;
+  --ink-line:rgba(233,239,246,0.14);
+  --paper:#F3F5F3;
+  --mist:#E8EDEB;
+  --card:#FFFFFF;
+  --line:#DCE3E0;
+  --text:#141C28;
+  --text-muted:#57626C;
+  --text-soft:#7C8792;
+  --on-ink:#E9EEF5;
+  --on-ink-muted:#9FACC0;
+
+  --sql:#33499E;
+  --sql-bright:#4C63C9;
+  --sql-soft:#E9ECF9;
+  --sql-line:#C7CEF0;
+
+  --nosql:#0E7F73;
+  --nosql-bright:#17B39F;
+  --nosql-soft:#E1F3EF;
+  --nosql-line:#BEE6DD;
+
+  --amber:#B97A1F;
+  --amber-bright:#E8A33D;
+  --amber-soft:#FBEEDA;
+
+  --radius-sm:8px;
+  --radius-md:14px;
+  --radius-lg:24px;
+  --shadow-sm:0 2px 10px rgba(10,22,40,0.07);
+  --shadow-md:0 14px 36px rgba(10,22,40,0.11);
+  --shadow-ink:0 18px 40px rgba(0,0,0,0.35);
+
+  --font-display:'Newsreader', ui-serif, Georgia, serif;
+  --font-body:'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono:'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+
+  --maxw:1220px;
+}
+
+*,*::before,*::after{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto;}
+  *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; scroll-behavior:auto !important;}
+}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--text);
+  font-family:var(--font-body);
+  font-size:16px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+img,svg{display:block; max-width:100%;}
+a{color:inherit; text-decoration:none;}
+ul,ol{margin:0; padding:0; list-style:none;}
+h1,h2,h3,h4,p{margin:0;}
+button{font:inherit; cursor:pointer;}
+input,textarea,select{font:inherit;}
+
+.container{
+  width:100%;
+  max-width:var(--maxw);
+  margin:0 auto;
+  padding:0 32px;
+}
+
+.eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  font-family:var(--font-mono);
+  font-size:12.5px;
+  letter-spacing:0.09em;
+  text-transform:uppercase;
+  color:var(--sql-bright);
+  font-weight:600;
+}
+.eyebrow::before{
+  content:"";
+  width:7px; height:7px;
+  border-radius:2px;
+  background:var(--nosql-bright);
+  display:inline-block;
+  transform:rotate(45deg);
+}
+.on-ink .eyebrow{color:var(--nosql-bright);}
+
+.section-head{
+  max-width:720px;
+  margin-bottom:52px;
+}
+.section-head.center{margin-left:auto; margin-right:auto; text-align:center;}
+.section-title{
+  font-family:var(--font-display);
+  font-weight:600;
+  font-size:clamp(28px,3.6vw,42px);
+  line-height:1.15;
+  letter-spacing:-0.01em;
+  margin-top:14px;
+  color:var(--ink);
+}
+.on-ink .section-title{color:var(--on-ink);}
+.section-desc{
+  margin-top:16px;
+  font-size:17px;
+  color:var(--text-muted);
+  line-height:1.65;
+  max-width:62ch;
+}
+.on-ink .section-desc{color:var(--on-ink-muted);}
+
+.section{ padding:104px 0; }
+.section.tight{ padding:80px 0; }
+.section.on-ink{ background:var(--ink); }
+.section.mist{ background:var(--mist); }
+
+/* Buttons */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  padding:14px 24px;
+  border-radius:100px;
+  font-weight:600;
+  font-size:14.5px;
+  border:1px solid transparent;
+  transition:transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease, color .18s ease;
+  white-space:nowrap;
+}
+.btn svg{width:16px; height:16px;}
+.btn-primary{
+  background:var(--sql-bright);
+  color:#fff;
+  box-shadow:0 10px 24px rgba(76,99,201,0.28);
+}
+.btn-primary:hover{ transform:translateY(-2px); box-shadow:0 16px 30px rgba(76,99,201,0.36); }
+.btn-ghost{
+  background:transparent;
+  color:var(--ink);
+  border-color:var(--line);
+}
+.btn-ghost:hover{ border-color:var(--sql-bright); color:var(--sql-bright); transform:translateY(-2px); }
+.btn-on-ink{
+  background:rgba(233,239,246,0.06);
+  color:var(--on-ink);
+  border-color:var(--ink-line);
+}
+.btn-on-ink:hover{ background:rgba(233,239,246,0.12); border-color:rgba(233,239,246,0.3); transform:translateY(-2px); }
+.btn-block{width:100%;}
+
+/* Icon helper */
+.icon{width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round;}
+
+/* ============ Header ============ */
+.site-header{
+  position:fixed; top:0; left:0; right:0;
+  z-index:100;
+  padding:18px 0;
+  transition:background .3s ease, padding .3s ease, border-color .3s ease, backdrop-filter .3s ease;
+  border-bottom:1px solid transparent;
+}
+.site-header.scrolled{
+  padding:12px 0;
+  background:rgba(10,22,40,0.82);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--ink-line);
+}
+.nav-wrap{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:24px;
+}
+.logo{ display:flex; align-items:center; gap:11px; }
+.logo-mark{ width:36px; height:36px; flex:none; }
+.logo-text{
+  font-family:var(--font-mono);
+  font-weight:600;
+  font-size:16.5px;
+  letter-spacing:0.01em;
+  color:var(--on-ink);
+  line-height:1.1;
+}
+.logo-text small{
+  display:block;
+  font-family:var(--font-body);
+  font-weight:400;
+  font-size:11px;
+  letter-spacing:0.03em;
+  color:var(--on-ink-muted);
+  margin-top:2px;
+}
+.nav-links{
+  display:flex; align-items:center; gap:4px;
+}
+.nav-links a{
+  padding:9px 15px;
+  border-radius:100px;
+  font-size:14.5px;
+  font-weight:500;
+  color:var(--on-ink-muted);
+  transition:color .2s ease, background .2s ease;
+}
+.nav-links a:hover, .nav-links a.active{
+  color:var(--on-ink);
+  background:rgba(233,239,246,0.08);
+}
+.nav-right{display:flex; align-items:center; gap:10px;}
+.nav-toggle{
+  display:none;
+  width:42px; height:42px;
+  align-items:center; justify-content:center;
+  background:rgba(233,239,246,0.06);
+  border:1px solid var(--ink-line);
+  border-radius:10px;
+  color:var(--on-ink);
+}
+.nav-drawer{
+  display:none;
+  position:fixed; inset:0 0 0 0;
+  background:var(--ink);
+  z-index:99;
+  padding:100px 28px 40px;
+  flex-direction:column;
+  gap:6px;
+  overflow-y:auto;
+}
+.nav-drawer.open{display:flex;}
+.nav-drawer a{
+  font-family:var(--font-display);
+  font-size:26px;
+  color:var(--on-ink);
+  padding:14px 4px;
+  border-bottom:1px solid var(--ink-line);
+}
+.nav-drawer .btn{margin-top:20px;}
+
+/* ============ Hero ============ */
+.hero{
+  position:relative;
+  background:
+    radial-gradient(1100px 620px at 82% -10%, rgba(76,99,201,0.35), transparent 60%),
+    radial-gradient(900px 500px at -5% 110%, rgba(23,179,159,0.20), transparent 55%),
+    var(--ink);
+  color:var(--on-ink);
+  padding:168px 0 96px;
+  overflow:hidden;
+}
+.hero-inner{
+  display:grid;
+  grid-template-columns:1.05fr 0.95fr;
+  gap:56px;
+  align-items:center;
+}
+.hero-copy .eyebrow{margin-bottom:20px;}
+.hero-title{
+  font-family:var(--font-display);
+  font-weight:600;
+  font-size:clamp(36px,4.6vw,58px);
+  line-height:1.08;
+  letter-spacing:-0.015em;
+  color:#fff;
+}
+.hero-title em{
+  font-style:italic;
+  color:var(--nosql-bright);
+}
+.hero-lede{
+  margin-top:22px;
+  font-size:18px;
+  line-height:1.7;
+  color:var(--on-ink-muted);
+  max-width:52ch;
+}
+.hero-actions{
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  margin-top:34px;
+}
+.hero-stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:1px;
+  margin-top:56px;
+  background:var(--ink-line);
+  border:1px solid var(--ink-line);
+  border-radius:16px;
+  overflow:hidden;
+}
+.stat-chip{
+  background:rgba(233,239,246,0.03);
+  padding:18px 16px;
+}
+.stat-chip b{
+  display:block;
+  font-family:var(--font-mono);
+  font-size:20px;
+  color:#fff;
+  letter-spacing:-0.01em;
+}
+.stat-chip span{
+  display:block;
+  margin-top:5px;
+  font-size:12px;
+  color:var(--on-ink-muted);
+  line-height:1.4;
+}
+
+/* Hero visual: hybrid schema signature */
+.hero-visual{ position:relative; }
+.hybrid-visual{
+  width:100%;
+  aspect-ratio:1/1;
+  max-width:480px;
+  margin:0 auto;
+  display:block;
+}
+.hero-visual-caption{
+  display:flex;
+  justify-content:space-between;
+  max-width:480px;
+  margin:14px auto 0;
+  font-family:var(--font-mono);
+  font-size:11.5px;
+  color:var(--on-ink-muted);
+  letter-spacing:0.03em;
+}
+.hero-visual-caption b{color:var(--on-ink); font-weight:500;}
+
+/* Hybrid divider between sections */
+.hybrid-divider{
+  width:100%; height:46px;
+  display:block;
+}
+
+@media (max-width:980px){
+  .hero-inner{grid-template-columns:1fr; gap:48px;}
+  .hero{padding:136px 0 72px;}
+  .hero-stats{grid-template-columns:repeat(2,1fr);}
+  .nav-links{display:none;}
+  .nav-toggle{display:inline-flex;}
+  .section{padding:76px 0;}
+}
+@media (max-width:640px){
+  .container{padding:0 20px;}
+  .hero-title{font-size:34px;}
+  .hero-stats{grid-template-columns:repeat(2,1fr);}
+}
+
+/* ============ Empresa ============ */
+.empresa-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:64px;
+  align-items:start;
+}
+.empresa-copy p{ color:var(--text-muted); font-size:16px; line-height:1.75; }
+.empresa-copy p + p{ margin-top:16px; }
+.quick-facts{
+  margin-top:28px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+.quick-fact{
+  display:flex;
+  gap:12px;
+  align-items:flex-start;
+  padding-top:14px;
+  border-top:1px solid var(--line);
+}
+.quick-fact:first-child{border-top:none; padding-top:0;}
+.quick-fact svg{width:19px; height:19px; flex:none; color:var(--sql-bright); margin-top:2px;}
+.quick-fact b{display:block; font-size:14.5px; color:var(--ink); font-weight:600;}
+.quick-fact span{font-size:14px; color:var(--text-muted);}
+
+.mv-grid{ display:flex; flex-direction:column; gap:16px; }
+.mv-card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:var(--radius-lg);
+  padding:28px 30px;
+  box-shadow:var(--shadow-sm);
+}
+.mv-card__head{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+.mv-card__head svg{width:20px; height:20px; color:var(--nosql-bright);}
+.mv-card__head h3{ font-family:var(--font-display); font-weight:600; font-size:19px; }
+.mv-card p{ color:var(--text-muted); font-size:15px; line-height:1.7; }
+
+.values-cloud{
+  margin-top:8px;
+  display:flex; flex-wrap:wrap; gap:9px;
+}
+.value-chip{
+  font-family:var(--font-mono);
+  font-size:12.5px;
+  padding:8px 13px;
+  border-radius:100px;
+  background:var(--sql-soft);
+  color:var(--sql);
+  border:1px solid var(--sql-line);
+}
+.value-chip:nth-child(3n+2){ background:var(--nosql-soft); color:var(--nosql); border-color:var(--nosql-line); }
+.value-chip:nth-child(4n+3){ background:var(--amber-soft); color:var(--amber); border-color:#EFD5A8; }
+
+/* ============ Org chart mini ============ */
+.org-mini{
+  margin-top:24px;
+  border:1px solid var(--line);
+  border-radius:var(--radius-lg);
+  padding:26px 28px;
+  background:var(--card);
+}
+.org-mini__top{
+  font-family:var(--font-mono);
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  color:var(--text-soft);
+  margin-bottom:14px;
+}
+.org-mini__grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+}
+.org-mini__cell{
+  border:1px dashed var(--line);
+  border-radius:10px;
+  padding:12px 12px;
+  font-size:12.5px;
+  color:var(--text-muted);
+}
+.org-mini__cell b{ display:block; font-size:13px; color:var(--ink); margin-bottom:3px;}
+
+/* ============ Servicios ============ */
+.services-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:20px;
+}
+.service-card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:var(--radius-lg);
+  padding:28px 26px;
+  display:flex; flex-direction:column;
+  transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+.service-card:hover{ transform:translateY(-4px); box-shadow:var(--shadow-md); border-color:transparent; }
+.service-card__icon{
+  width:46px; height:46px;
+  border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--sql-soft);
+  color:var(--sql);
+  margin-bottom:18px;
+}
+.service-card__icon svg{width:22px; height:22px;}
+.service-card h3{ font-family:var(--font-display); font-size:20px; font-weight:600; margin-bottom:6px; }
+.service-card__status{
+  display:inline-flex; align-items:center; gap:6px;
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.03em;
+  padding:4px 10px; border-radius:100px;
+  width:fit-content; margin-bottom:14px;
+}
+.service-card__status.active{ background:var(--nosql-soft); color:var(--nosql); }
+.service-card__status.soon{ background:var(--amber-soft); color:var(--amber); }
+.service-card__status svg{width:11px; height:11px;}
+.service-card__list{ margin-top:auto; padding-top:14px; border-top:1px solid var(--line); display:flex; flex-direction:column; gap:8px;}
+.service-card__list li{ font-size:13.5px; color:var(--text-muted); padding-left:16px; position:relative; }
+.service-card__list li::before{
+  content:""; position:absolute; left:0; top:8px;
+  width:6px; height:6px; border-radius:1px; background:var(--sql-bright); transform:rotate(45deg);
+}
+
+/* ============ Problem band ============ */
+.problem-band{ background:var(--ink); color:var(--on-ink); }
+.problem-grid{
+  margin-top:44px;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:1px;
+  background:var(--ink-line);
+  border:1px solid var(--ink-line);
+  border-radius:20px;
+  overflow:hidden;
+}
+.problem-item{
+  background:var(--ink-soft);
+  padding:30px 26px;
+}
+.problem-item span{
+  font-family:var(--font-mono);
+  font-size:12px;
+  color:var(--nosql-bright);
+}
+.problem-item h4{
+  font-family:var(--font-display);
+  font-weight:600;
+  font-size:19px;
+  margin-top:10px;
+  color:#fff;
+}
+.problem-item p{
+  margin-top:10px;
+  font-size:14px;
+  color:var(--on-ink-muted);
+  line-height:1.65;
+}
+
+/* ============ Plataforma (tabs) ============ */
+.tab-nav{
+  display:flex; flex-wrap:wrap; gap:9px;
+  margin-bottom:36px;
+}
+.tab-btn{
+  display:flex; align-items:center; gap:8px;
+  padding:11px 18px;
+  border-radius:100px;
+  border:1px solid var(--line);
+  background:var(--card);
+  color:var(--text-muted);
+  font-size:14px; font-weight:600;
+  transition:all .18s ease;
+}
+.tab-btn svg{width:16px; height:16px;}
+.tab-btn:hover{ border-color:var(--sql-bright); color:var(--sql); }
+.tab-btn.active{ background:var(--ink); color:#fff; border-color:var(--ink); }
+.tab-btn.active svg{ color:var(--nosql-bright); }
+
+.tab-panel{ display:none; }
+.tab-panel.active{ display:block; animation:fadeUp .35s ease; }
+@keyframes fadeUp{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+.module-shell{
+  display:grid;
+  grid-template-columns:0.85fr 1.15fr;
+  gap:0;
+  border:1px solid var(--line);
+  border-radius:var(--radius-lg);
+  overflow:hidden;
+  background:var(--card);
+  box-shadow:var(--shadow-sm);
+}
+.module-copy{ padding:40px; }
+.module-copy .tag{
+  font-family:var(--font-mono); font-size:11.5px; color:var(--nosql);
+  background:var(--nosql-soft); padding:5px 10px; border-radius:100px; letter-spacing:.03em;
+}
+.module-copy h3{ font-family:var(--font-display); font-size:26px; font-weight:600; margin-top:16px; }
+.module-copy p{ margin-top:12px; color:var(--text-muted); font-size:15px; line-height:1.7; }
+.module-copy__list{ margin-top:20px; display:flex; flex-direction:column; gap:10px; }
+.module-copy__list li{
+  display:flex; gap:10px; align-items:flex-start;
+  font-size:13.8px; color:var(--text-muted);
+}
+.module-copy__list svg{ width:16px; height:16px; color:var(--sql-bright); flex:none; margin-top:2px;}
+.module-visual{
+  background:var(--ink-soft);
+  padding:34px;
+  display:flex; align-items:center; justify-content:center;
+  position:relative;
+}
+.device-frame{
+  width:100%;
+  background:var(--ink);
+  border:1px solid var(--ink-line);
+  border-radius:16px;
+  padding:22px;
+  box-shadow:var(--shadow-ink);
+}
+.device-frame__bar{
+  display:flex; gap:6px; margin-bottom:18px;
+}
+.device-frame__bar span{ width:9px; height:9px; border-radius:50%; background:var(--ink-line); }
+
+/* Login mock */
+.login-mock{ max-width:320px; margin:0 auto; }
+.login-mock h4{ color:#fff; font-family:var(--font-display); font-size:18px; text-align:center; margin-bottom:4px;}
+.login-mock p.sub{ color:var(--on-ink-muted); font-size:12px; text-align:center; margin-bottom:20px;}
+.mock-field{
+  background:rgba(233,239,246,0.05);
+  border:1px solid var(--ink-line);
+  border-radius:9px;
+  padding:11px 13px;
+  font-size:13px; color:var(--on-ink-muted);
+  margin-bottom:10px;
+  font-family:var(--font-mono);
+}
+.otp-row{ display:flex; gap:7px; margin:16px 0; justify-content:center; }
+.otp-box{
+  width:34px; height:40px;
+  border:1px solid var(--nosql-bright);
+  border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--nosql-bright); font-family:var(--font-mono); font-size:15px;
+  background:rgba(23,179,159,0.08);
+}
+
+/* Roles table mock */
+.roles-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+.roles-table th{ text-align:left; color:var(--on-ink-muted); font-weight:500; padding:8px 10px; border-bottom:1px solid var(--ink-line); font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:.03em;}
+.roles-table td{ padding:11px 10px; color:var(--on-ink); border-bottom:1px solid var(--ink-line); }
+.role-pill{
+  display:inline-block; padding:4px 11px; border-radius:100px;
+  font-family:var(--font-mono); font-size:11px;
+  background:rgba(76,99,201,0.16); color:#A9B6EE; border:1px solid rgba(76,99,201,0.4);
+}
+
+/* Kanban mock */
+.kanban{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.kanban-col{ background:rgba(233,239,246,0.04); border:1px solid var(--ink-line); border-radius:10px; padding:10px; min-height:170px;}
+.kanban-col h5{ font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--on-ink-muted); margin-bottom:10px; }
+.kanban-card{ background:var(--ink-softer); border:1px solid var(--ink-line); border-radius:8px; padding:9px 10px; font-size:11.5px; color:var(--on-ink); margin-bottom:8px; }
+.kanban-card b{ display:block; font-size:10px; color:var(--nosql-bright); font-family:var(--font-mono); margin-bottom:3px; font-weight:500;}
+
+/* Client portal mock */
+.progress-track{ display:flex; align-items:center; margin:6px 0 20px; }
+.progress-dot{ width:11px; height:11px; border-radius:50%; background:var(--nosql-bright); flex:none; }
+.progress-dot.todo{ background:var(--ink-line); }
+.progress-line{ flex:1; height:2px; background:var(--nosql-bright); }
+.progress-line.todo{ background:var(--ink-line); }
+.doc-row{ display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:rgba(233,239,246,0.04); border:1px solid var(--ink-line); border-radius:9px; margin-bottom:8px;}
+.doc-row__name{ display:flex; align-items:center; gap:9px; font-size:12.5px; color:var(--on-ink); }
+.doc-row__name svg{ width:15px; height:15px; color:var(--sql-bright); }
+.doc-row svg.dl{ width:15px; height:15px; color:var(--on-ink-muted); }
+
+/* BI mock */
+.bi-mock{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.bi-card{ background:rgba(233,239,246,0.04); border:1px solid var(--ink-line); border-radius:10px; padding:14px; }
+.bi-card h6{ font-family:var(--font-mono); font-size:10px; text-transform:uppercase; color:var(--on-ink-muted); margin-bottom:12px; letter-spacing:.03em;}
+.bars{ display:flex; align-items:flex-end; gap:8px; height:90px; }
+.bars .bar{ flex:1; border-radius:4px 4px 0 0; }
+.bars .bar.income{ background:var(--nosql-bright); }
+.bars .bar.expense{ background:#E86B5C; }
+
+/* ============ Sistema section (arquitectura / datos / requisitos) ============ */
+.sistema-tabs{
+  display:inline-flex; gap:4px;
+  background:var(--mist);
+  padding:4px; border-radius:100px;
+  margin-bottom:44px;
+}
+.sistema-tab-btn{
+  padding:10px 20px; border-radius:100px;
+  font-size:14px; font-weight:600; color:var(--text-muted);
+  transition:all .18s ease;
+}
+.sistema-tab-btn.active{ background:var(--ink); color:#fff; }
+.sistema-panel{ display:none; }
+.sistema-panel.active{ display:block; animation:fadeUp .35s ease; }
+
+.stack-grid{
+  display:grid; grid-template-columns:repeat(5,1fr); gap:16px;
+}
+.stack-card{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius-md);
+  padding:22px 18px;
+}
+.stack-card svg{ width:24px; height:24px; color:var(--sql-bright); margin-bottom:14px;}
+.stack-card b{ display:block; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-soft); font-family:var(--font-mono); margin-bottom:6px;}
+.stack-card strong{ display:block; font-size:15px; color:var(--ink); margin-bottom:8px; }
+.stack-card p{ font-size:12.5px; color:var(--text-muted); line-height:1.55; }
+
+.principles-grid{
+  margin-top:20px;
+  display:grid; grid-template-columns:repeat(4,1fr); gap:16px;
+}
+.principle-card{
+  border:1px solid var(--line); border-radius:var(--radius-md); padding:20px;
+  background:var(--card);
+}
+.principle-card svg{ width:20px; height:20px; color:var(--nosql-bright); margin-bottom:10px;}
+.principle-card h5{ font-size:14.5px; font-weight:600; margin-bottom:6px; }
+.principle-card p{ font-size:12.8px; color:var(--text-muted); line-height:1.55;}
+
+.flow-steps{
+  margin-top:20px;
+  display:grid; grid-template-columns:repeat(5,1fr); gap:14px;
+}
+.flow-step{
+  border:1px solid var(--line); border-radius:var(--radius-md);
+  padding:18px 16px; background:var(--card); position:relative;
+}
+.flow-step__num{
+  font-family:var(--font-mono); font-size:12px; color:var(--sql-bright); font-weight:600;
+}
+.flow-step p{ font-size:13px; margin-top:8px; color:var(--text-muted); line-height:1.5;}
+
+.data-table{ width:100%; border-collapse:collapse; margin-top:18px; }
+.data-table th{
+  text-align:left; font-family:var(--font-mono); font-size:11px; text-transform:uppercase;
+  letter-spacing:.04em; color:var(--text-soft); padding:10px 14px; border-bottom:1px solid var(--line);
+}
+.data-table td{ padding:13px 14px; font-size:13.8px; border-bottom:1px solid var(--line); color:var(--text); }
+.data-table tr:last-child td{ border-bottom:none; }
+.data-table code{ font-family:var(--font-mono); font-size:12.5px; background:var(--mist); padding:2px 7px; border-radius:5px; }
+.method{ font-family:var(--font-mono); font-size:11.5px; font-weight:600; padding:3px 8px; border-radius:5px; }
+.method.get{ background:var(--nosql-soft); color:var(--nosql); }
+.method.post{ background:var(--sql-soft); color:var(--sql); }
+.method.put, .method.patch{ background:var(--amber-soft); color:var(--amber); }
+
+/* Database diagram */
+.db-diagram{
+  display:grid; grid-template-columns:1fr auto 1fr; gap:0; align-items:center;
+  border:1px solid var(--line); border-radius:var(--radius-lg);
+  padding:38px; background:var(--card);
+}
+.db-col-head{ display:flex; align-items:center; gap:10px; margin-bottom:20px; }
+.db-col-head svg{ width:20px; height:20px; }
+.db-col-head b{ font-family:var(--font-mono); font-size:14px; }
+.db-col-sql .db-col-head svg, .db-col-sql .db-col-head b{ color:var(--sql); }
+.db-col-nosql .db-col-head svg, .db-col-nosql .db-col-head b{ color:var(--nosql); }
+
+.table-chip{
+  border:1px solid var(--sql-line); background:var(--sql-soft); border-radius:8px;
+  padding:12px 14px; margin-bottom:9px;
+}
+.table-chip b{ display:block; font-family:var(--font-mono); font-size:13px; color:var(--sql); }
+.table-chip span{ font-size:11.5px; color:#5A63A0; }
+
+.collection-node{
+  border:1px solid var(--nosql-line); background:var(--nosql-soft); border-radius:100px 18px 18px 100px;
+  padding:12px 16px; margin-bottom:9px;
+}
+.collection-node b{ display:block; font-family:var(--font-mono); font-size:13px; color:var(--nosql); }
+.collection-node span{ font-size:11.5px; color:#3B7A70; }
+
+.db-connector{
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  padding:0 30px;
+}
+.db-connector .chip{
+  width:60px; height:60px; border-radius:16px;
+  background:var(--ink); color:var(--amber-bright);
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid var(--ink-line);
+}
+.db-connector .chip svg{ width:26px; height:26px; }
+.db-connector span{ font-family:var(--font-mono); font-size:10.5px; text-align:center; color:var(--text-soft); line-height:1.5; }
+.db-connector .line{ width:1px; height:26px; background:var(--line); }
+
+.entity-grid{
+  margin-top:20px;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:16px;
+}
+.entity-card{
+  border:1px solid var(--line); border-radius:var(--radius-md); overflow:hidden; background:var(--card);
+}
+.entity-card__head{
+  padding:13px 16px; font-family:var(--font-mono); font-size:12.5px; font-weight:600;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.entity-card.sql .entity-card__head{ background:var(--sql-soft); color:var(--sql); }
+.entity-card.nosql .entity-card__head{ background:var(--nosql-soft); color:var(--nosql); }
+.entity-card__body{ padding:14px 16px; }
+.entity-card__body div{ font-size:12.3px; color:var(--text-muted); padding:5px 0; border-bottom:1px dashed var(--line); font-family:var(--font-mono); }
+.entity-card__body div:last-child{ border-bottom:none; }
+
+.relationships-list{
+  margin-top:22px;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:10px;
+}
+.relationships-list li{
+  font-family:var(--font-mono); font-size:12.5px; color:var(--text-muted);
+  background:var(--mist); border-radius:8px; padding:11px 13px;
+}
+.relationships-list b{ color:var(--ink); }
+
+/* Requisitos */
+.req-table-wrap{ overflow-x:auto; }
+.priority{ font-family:var(--font-mono); font-size:11px; font-weight:600; padding:3px 9px; border-radius:5px;}
+.priority.alta{ background:#FBE4E1; color:#B23A2A;}
+.priority.media{ background:var(--amber-soft); color:var(--amber);}
+.priority.baja{ background:var(--nosql-soft); color:var(--nosql);}
+
+.nfr-grid{
+  margin-top:36px;
+  display:grid; grid-template-columns:repeat(4,1fr); gap:16px;
+}
+.nfr-card{
+  border:1px solid var(--line); border-radius:var(--radius-md); padding:22px; background:var(--card);
+}
+.nfr-card__num{ font-family:var(--font-mono); font-size:11px; color:var(--sql-bright); font-weight:600; }
+.nfr-card h5{ font-family:var(--font-display); font-size:16.5px; margin:8px 0 8px; }
+.nfr-card p{ font-size:13px; color:var(--text-muted); line-height:1.6; }
+
+/* ============ Roadmap ============ */
+.roadmap-track{
+  display:grid; grid-template-columns:repeat(4,1fr);
+  gap:20px;
+  position:relative;
+  margin-top:20px;
+}
+.roadmap-track::before{
+  content:"";
+  position:absolute; top:34px; left:6%; right:6%; height:1px;
+  background:repeating-linear-gradient(90deg, var(--ink-line) 0 8px, transparent 8px 16px);
+}
+.roadmap-step{ position:relative; }
+.roadmap-step__num{
+  width:68px; height:68px; border-radius:50%;
+  background:var(--ink-soft); border:1px solid var(--ink-line);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-mono); font-size:22px; color:var(--nosql-bright); font-weight:600;
+  margin-bottom:20px; position:relative; z-index:1;
+}
+.roadmap-step h4{ font-family:var(--font-display); font-size:19px; color:#fff; margin-bottom:8px;}
+.roadmap-step p{ font-size:13.5px; color:var(--on-ink-muted); line-height:1.6; margin-bottom:14px;}
+.roadmap-step__mods{ display:flex; flex-wrap:wrap; gap:6px; }
+.roadmap-step__mods span{
+  font-family:var(--font-mono); font-size:10.5px; padding:4px 9px; border-radius:100px;
+  background:rgba(233,239,246,0.06); border:1px solid var(--ink-line); color:var(--on-ink-muted);
+}
+
+/* ============ Contacto ============ */
+.contact-grid{
+  display:grid; grid-template-columns:0.85fr 1.15fr; gap:56px;
+}
+.info-row{ display:flex; gap:14px; padding:18px 0; border-bottom:1px solid var(--line); }
+.info-row:first-child{padding-top:0;}
+.info-row svg{ width:20px; height:20px; color:var(--sql-bright); flex:none; margin-top:2px;}
+.info-row b{ display:block; font-size:14.5px; margin-bottom:3px;}
+.info-row span{ font-size:13.8px; color:var(--text-muted); line-height:1.5; }
+.map-card{
+  margin-top:22px; border-radius:var(--radius-lg); overflow:hidden; border:1px solid var(--line);
+  height:180px; position:relative;
+  background:
+    linear-gradient(rgba(10,22,40,0.82), rgba(10,22,40,0.82)),
+    repeating-linear-gradient(0deg, #223256 0 1px, transparent 1px 26px),
+    repeating-linear-gradient(90deg, #223256 0 1px, transparent 1px 26px),
+    var(--ink);
+}
+.map-card__pin{
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-60%);
+  display:flex; flex-direction:column; align-items:center; color:#fff;
+}
+.map-card__pin svg{ width:26px; height:26px; color:var(--amber-bright); }
+.map-card__pin span{ font-family:var(--font-mono); font-size:11.5px; margin-top:6px; text-align:center; color:var(--on-ink-muted); }
+
+.contact-form{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius-lg);
+  padding:38px;
+  box-shadow:var(--shadow-sm);
+}
+.form-row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.field{ margin-bottom:18px; }
+.field label{ display:block; font-size:12.5px; font-weight:600; color:var(--ink); margin-bottom:7px; }
+.field input, .field select, .field textarea{
+  width:100%; padding:12px 14px; border-radius:9px; border:1px solid var(--line);
+  background:var(--paper); color:var(--text); font-size:14px;
+  transition:border-color .18s ease, background .18s ease;
+}
+.field input:focus, .field select:focus, .field textarea:focus{
+  outline:none; border-color:var(--sql-bright); background:#fff;
+}
+.field textarea{ resize:vertical; min-height:96px; }
+.form-success{
+  display:none; align-items:center; gap:10px;
+  background:var(--nosql-soft); color:var(--nosql); border:1px solid var(--nosql-line);
+  padding:14px 16px; border-radius:10px; font-size:13.5px; margin-top:16px;
+}
+.form-success.show{ display:flex; }
+.form-success svg{ width:18px; height:18px; flex:none; }
+
+/* ============ Footer ============ */
+.site-footer{ background:var(--ink); color:var(--on-ink-muted); padding:64px 0 28px; }
+.footer-grid{
+  display:grid; grid-template-columns:1.3fr 1fr 1fr 1fr; gap:40px;
+  padding-bottom:44px; border-bottom:1px solid var(--ink-line);
+}
+.footer-brand p{ margin-top:14px; font-size:13.5px; line-height:1.7; max-width:32ch; }
+.footer-col h6{ font-family:var(--font-mono); font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--on-ink); margin-bottom:14px; }
+.footer-col ul{ display:flex; flex-direction:column; gap:10px; }
+.footer-col a{ font-size:13.5px; transition:color .18s ease; }
+.footer-col a:hover{ color:#fff; }
+.footer-bottom{
+  padding-top:24px; display:flex; justify-content:space-between; align-items:center;
+  font-size:12.5px; flex-wrap:wrap; gap:10px;
+}
+
+/* ============ Reveal-on-scroll ============ */
+.reveal{ opacity:0; transform:translateY(18px); transition:opacity .6s ease, transform .6s ease; }
+.reveal.in{ opacity:1; transform:translateY(0); }
+
+/* ============ Responsive ============ */
+@media (max-width:1080px){
+  .services-grid{ grid-template-columns:repeat(2,1fr); }
+  .stack-grid{ grid-template-columns:repeat(3,1fr); }
+  .principles-grid{ grid-template-columns:repeat(2,1fr); }
+  .flow-steps{ grid-template-columns:repeat(3,1fr); }
+  .entity-grid{ grid-template-columns:repeat(2,1fr); }
+  .relationships-list{ grid-template-columns:repeat(2,1fr); }
+  .nfr-grid{ grid-template-columns:repeat(2,1fr); }
+  .roadmap-track{ grid-template-columns:repeat(2,1fr); row-gap:44px;}
+  .roadmap-track::before{ display:none; }
+  .footer-grid{ grid-template-columns:1fr 1fr; row-gap:36px;}
+}
+@media (max-width:980px){
+  .empresa-grid{ grid-template-columns:1fr; gap:44px; }
+  .problem-grid{ grid-template-columns:repeat(2,1fr); }
+  .module-shell{ grid-template-columns:1fr; }
+  .module-visual{ padding:26px; }
+  .contact-grid{ grid-template-columns:1fr; gap:40px; }
+  .db-diagram{ grid-template-columns:1fr; gap:24px; }
+  .db-connector{ flex-direction:row; padding:10px 0; }
+  .db-connector .line{ width:26px; height:1px; }
+}
+@media (max-width:640px){
+  .services-grid{ grid-template-columns:1fr; }
+  .stack-grid{ grid-template-columns:repeat(2,1fr); }
+  .principles-grid{ grid-template-columns:1fr; }
+  .flow-steps{ grid-template-columns:1fr; }
+  .entity-grid{ grid-template-columns:1fr; }
+  .relationships-list{ grid-template-columns:1fr; }
+  .nfr-grid{ grid-template-columns:1fr; }
+  .roadmap-track{ grid-template-columns:1fr; }
+  .problem-grid{ grid-template-columns:1fr; }
+  .footer-grid{ grid-template-columns:1fr; }
+  .form-row{ grid-template-columns:1fr; }
+  .kanban{ grid-template-columns:1fr; }
+  .bi-mock{ grid-template-columns:1fr; }
+  .tab-nav{ overflow-x:auto; flex-wrap:nowrap; padding-bottom:6px; }
+  .sistema-tabs{ flex-wrap:wrap; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ Icon sprite ============ -->
+<svg style="display:none" aria-hidden="true" xmlns:xlink="http://www.w3.org/1999/xlink">
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.6-3 8.2-7 9-4-.8-7-4.4-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c0-3 2.5-5.2 5.5-5.2S14.5 16 14.5 19"/><circle cx="17" cy="9" r="2.6"/><path d="M15.8 13.6c2.4.4 4.2 2.4 4.2 5.4"/></symbol>
+<symbol id="i-kanban" viewBox="0 0 24 24"><rect x="3.5" y="4" width="4.6" height="16" rx="1.3"/><rect x="9.7" y="4" width="4.6" height="10" rx="1.3"/><rect x="15.9" y="4" width="4.6" height="13" rx="1.3"/></symbol>
+<symbol id="i-briefcase" viewBox="0 0 24 24"><rect x="3" y="7.5" width="18" height="12" rx="2"/><path d="M8.5 7.5V6a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v1.5"/><path d="M3 12.5h18"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10"/><path d="M11 20V4"/><path d="M18 20v-7"/><path d="M3 20h18"/></symbol>
+<symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5V18c0 1.66 3.58 3 8 3s8-1.34 8-3V5.5"/><path d="M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3"/></symbol>
+<symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/><path d="M3 17.5l9 5 9-5"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5 5.5-6"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.5l3.5 2"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6.4 7-12a7 7 0 1 0-14 0c0 5.6 7 12 7 12z"/><circle cx="12" cy="9" r="2.4"/></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M4 6.5l8 6.5 8-6.5"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v12"/><path d="M7 11l5 5 5-5"/><path d="M4 20h16"/></symbol>
+<symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.3"/><circle cx="18" cy="18" r="2.3"/><path d="M6 8.3V13a3 3 0 0 0 3 3h3"/><path d="M18 15.7V11a3 3 0 0 0-3-3h-3"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.7"/><circle cx="12" cy="12" r="1"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15 9l-2 6-6 2 2-6 6-2z"/></symbol>
+<symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19c9 0 14-5 14-14-9 0-14 5-14 14z"/><path d="M5 19c0-5 3-8 8-9.5"/></symbol>
+<symbol id="i-cap" viewBox="0 0 24 24"><path d="M12 4l10 5-10 5L2 9l10-5z"/><path d="M6 11.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-4.5"/></symbol>
+<symbol id="i-cpu" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1.6"/><path d="M9.5 3v3M14.5 3v3M9.5 18v3M14.5 18v3M3 9.5h3M3 14.5h3M18 9.5h3M18 14.5h3"/></symbol>
+<symbol id="i-server" viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="6" rx="1.5"/><rect x="3.5" y="14" width="17" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/></symbol>
+<symbol id="i-building" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 7h1.5M14.5 7H16M8 11h1.5M14.5 11H16M8 15h1.5M14.5 15H16"/><path d="M10 21v-4h4v4"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5"/></symbol>
+<symbol id="i-phone" viewBox="0 0 24 24"><path d="M5 4.5h3.5l1.5 4-2 1.5a12 12 0 0 0 5.5 5.5l1.5-2 4 1.5V18a1.7 1.7 0 0 1-1.9 1.7A15.3 15.3 0 0 1 4.3 6.4 1.7 1.7 0 0 1 5 4.5z"/></symbol>
+</svg>
+
+<!-- ============ Header ============ -->
+<header class="site-header" id="siteHeader">
+  <div class="container nav-wrap">
+    <a href="#inicio" class="logo" aria-label="NEXUS-TAF, inicio">
+      <svg class="logo-mark" viewBox="0 0 40 40" fill="none">
+        <rect x="1" y="1" width="17" height="17" rx="4" stroke="#4C63C9" stroke-width="2"/>
+        <line x1="6" y1="9.5" x2="14" y2="9.5" stroke="#4C63C9" stroke-width="1.6"/>
+        <line x1="9.5" y1="6" x2="9.5" y2="14" stroke="#4C63C9" stroke-width="1.6"/>
+        <circle cx="30" cy="10" r="8.5" stroke="#17B39F" stroke-width="2"/>
+        <circle cx="30" cy="10" r="2" fill="#17B39F"/>
+        <path d="M9.5 18v9a3 3 0 0 0 3 3h9" stroke="#8C9BD9" stroke-width="1.6" stroke-dasharray="1 4" stroke-linecap="round"/>
+        <circle cx="24" cy="30" r="6.5" stroke="#E8A33D" stroke-width="2"/>
+        <path d="M21 30l2 2 4-4.4" stroke="#E8A33D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="logo-text">NEXUS&#8209;TAF<small>Consultores TAF</small></span>
+    </a>
+
+    <nav class="nav-links" aria-label="Navegación principal">
+      <a href="#empresa">Empresa</a>
+      <a href="#servicios">Servicios</a>
+      <a href="#plataforma">Plataforma</a>
+      <a href="#sistema">Sistema</a>
+      <a href="#roadmap">Roadmap</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+
+    <div class="nav-right">
+      <a href="app.html" class="btn btn-ghost" style="padding:11px 20px; border-color:var(--ink-line); color:var(--on-ink);">
+        Entrar a la plataforma
+      </a>
+      <a href="#contacto" class="btn btn-on-ink" style="padding:11px 20px;">
+        Agendar consultoría
+      </a>
+      <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false">
+        <svg class="icon"><use href="#i-menu" xlink:href="#i-menu"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="nav-drawer" id="navDrawer">
+    <a href="#empresa">Empresa</a>
+    <a href="#servicios">Servicios</a>
+    <a href="#plataforma">Plataforma</a>
+    <a href="#sistema">Sistema</a>
+    <a href="#roadmap">Roadmap</a>
+    <a href="#contacto">Contacto</a>
+    <a href="app.html" class="btn btn-on-ink btn-block" style="margin-top:10px;">Entrar a la plataforma</a>
+    <a href="#contacto" class="btn btn-primary btn-block">Agendar consultoría</a>
+  </div>
+</header>
+
+<!-- ============ Hero ============ -->
+<section class="hero" id="inicio">
+  <div class="container hero-inner">
+    <div class="hero-copy">
+      <span class="eyebrow">Ecosistema digital de Consultores TAF</span>
+      <h1 class="hero-title">Consultoría multidimensional, <em>sincronizada</em> en una sola plataforma.</h1>
+      <p class="hero-lede">NEXUS-TAF centraliza la gestión ágil, el portal de clientes y la inteligencia de negocio de Consultores TAF sobre una arquitectura híbrida: datos críticos en PostgreSQL, operación flexible en MongoDB.</p>
+      <div class="hero-actions">
+        <a href="#plataforma" class="btn btn-primary">
+          Explorar la plataforma
+          <svg class="icon" style="stroke:#fff;"><use href="#i-arrow" xlink:href="#i-arrow"/></svg>
+        </a>
+        <a href="#sistema" class="btn btn-on-ink">Ver arquitectura y base de datos</a>
+      </div>
+
+      <div class="hero-stats">
+        <div class="stat-chip"><b>2019</b><span>Año de fundación de Consultores TAF</span></div>
+        <div class="stat-chip"><b>4</b><span>Áreas de consultoría integradas</span></div>
+        <div class="stat-chip"><b>2 motores</b><span>PostgreSQL + MongoDB en arquitectura híbrida</span></div>
+        <div class="stat-chip"><b>MFA</b><span>Autenticación de doble factor por diseño</span></div>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <svg class="hybrid-visual" viewBox="0 0 480 480" fill="none" aria-label="Diagrama del esquema híbrido de datos">
+        <!-- grid half (SQL) -->
+        <g opacity="0.9">
+          <rect x="34" y="60" width="190" height="190" rx="10" stroke="#4C63C9" stroke-width="1.4" fill="rgba(76,99,201,0.06)"/>
+          <line x1="34" y1="123" x2="224" y2="123" stroke="#4C63C9" stroke-width="1" opacity="0.5"/>
+          <line x1="34" y1="186" x2="224" y2="186" stroke="#4C63C9" stroke-width="1" opacity="0.5"/>
+          <line x1="97" y1="60" x2="97" y2="250" stroke="#4C63C9" stroke-width="1" opacity="0.5"/>
+          <line x1="160" y1="60" x2="160" y2="250" stroke="#4C63C9" stroke-width="1" opacity="0.5"/>
+        </g>
+        <!-- node half (NoSQL) -->
+        <g opacity="0.95">
+          <circle cx="330" cy="110" r="7" fill="#17B39F"/>
+          <circle cx="390" cy="150" r="10" fill="#17B39F"/>
+          <circle cx="345" cy="190" r="6" fill="#17B39F"/>
+          <circle cx="410" cy="90" r="5" fill="#17B39F"/>
+          <circle cx="300" cy="170" r="5" fill="#17B39F"/>
+          <path d="M330 110L390 150M390 150L345 190M390 150L410 90M330 110L300 170M345 190L300 170" stroke="#17B39F" stroke-width="1.1" opacity="0.55"/>
+        </g>
+        <!-- sync connector -->
+        <g>
+          <line x1="224" y1="155" x2="256" y2="155" stroke="#E8A33D" stroke-width="1.4" stroke-dasharray="2 5"/>
+          <rect x="222" y="138" width="36" height="34" rx="8" fill="#0A1628" stroke="#E8A33D" stroke-width="1.4"/>
+          <path d="M232 155h16M244 149l6 6-6 6" stroke="#E8A33D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+        <!-- lower connective row: modules -->
+        <g stroke="#8C9BD9" stroke-width="1" opacity="0.45">
+          <path d="M60 250v70a6 6 0 0 0 6 6h100a6 6 0 0 0 6-6v-40"/>
+          <path d="M400 200v70a6 6 0 0 1-6 6H260a6 6 0 0 1-6-6v-40"/>
+        </g>
+        <g>
+          <rect x="44" y="332" width="140" height="70" rx="12" fill="#101F3A" stroke="#2B3A5C"/>
+          <text x="64" y="358" fill="#E9EEF5" font-family="IBM Plex Mono, monospace" font-size="11" font-weight="600">usuarios</text>
+          <text x="64" y="374" fill="#9FACC0" font-family="IBM Plex Mono, monospace" font-size="10">roles · finanzas</text>
+          <text x="64" y="390" fill="#4C63C9" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600">PostgreSQL</text>
+        </g>
+        <g>
+          <rect x="264" y="332" width="172" height="70" rx="12" fill="#101F3A" stroke="#2B3A5C"/>
+          <text x="284" y="358" fill="#E9EEF5" font-family="IBM Plex Mono, monospace" font-size="11" font-weight="600">proyectos · tareas</text>
+          <text x="284" y="374" fill="#9FACC0" font-family="IBM Plex Mono, monospace" font-size="10">documentos · auditoría</text>
+          <text x="284" y="390" fill="#17B39F" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600">MongoDB</text>
+        </g>
+      </svg>
+      <div class="hero-visual-caption">
+        <span><b>Relacional</b> · integridad y transacciones</span>
+        <span><b>Documental</b> · agilidad y escala</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- divider -->
+<svg class="hybrid-divider" viewBox="0 0 1220 46" preserveAspectRatio="none" style="background:var(--ink);">
+  <line x1="0" y1="23" x2="580" y2="23" stroke="#2B3A5C" stroke-width="1" stroke-dasharray="1 7"/>
+  <path d="M620 23 Q 680 4 740 23 T 860 23 T 980 23 T 1220 23" stroke="#1E4A44" stroke-width="1" fill="none"/>
+  <circle cx="600" cy="23" r="3" fill="#4C63C9"/>
+  <circle cx="640" cy="23" r="2.4" fill="#17B39F"/>
+</svg>
+
+<!-- ============ Empresa ============ -->
+<section class="section" id="empresa">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Quiénes somos</span>
+      <h2 class="section-title">Una consultora venezolana que decidió digitalizar su propia forma de trabajar.</h2>
+      <p class="section-desc">Sociedad Civil Consultores TAF opera desde Barquisimeto, estado Lara, desde 2019. NEXUS-TAF nace del mismo diagnóstico que resolvemos para nuestros clientes: sin una plataforma propia, la información se fragmenta y el seguimiento se vuelve opaco.</p>
+    </div>
+
+    <div class="empresa-grid">
+      <div class="empresa-copy">
+        <p>Consultores TAF fue fundada por las licenciadas Rosana Ochoa y Leticia Cuevas a partir de su experiencia como docentes universitarias, detectando debilidades recurrentes en la gestión administrativa, contable y organizacional de pequeñas y medianas empresas venezolanas.</p>
+        <p>Hoy el equipo está conformado por 6 personas —2 socias directivas y 4 colaboradores fijos— además de especialistas contratados por honorarios profesionales cuando un proyecto de asesoría lo requiere.</p>
+
+        <div class="quick-facts">
+          <div class="quick-fact">
+            <svg class="icon"><use href="#i-building" xlink:href="#i-building"/></svg>
+            <div><b>Sociedad Civil Consultores TAF</b><span>RIF J&#8209;412582585</span></div>
+          </div>
+          <div class="quick-fact">
+            <svg class="icon"><use href="#i-pin" xlink:href="#i-pin"/></svg>
+            <div><b>Barquisimeto, estado Lara</b><span>Calle 50 entre carreras 14 y 15, N.º 14&#8209;30, Municipio Iribarren, Parroquia Concepción</span></div>
+          </div>
+          <div class="quick-fact">
+            <svg class="icon"><use href="#i-clock" xlink:href="#i-clock"/></svg>
+            <div><b>Lunes a viernes</b><span>8:00 a.m. – 4:30 p.m., con 1 hora de almuerzo</span></div>
+          </div>
+        </div>
+
+        <div class="org-mini">
+          <div class="org-mini__top">Estructura organizacional</div>
+          <div class="org-mini__grid">
+            <div class="org-mini__cell"><b>Dirección Ejecutiva</b>CEO</div>
+            <div class="org-mini__cell"><b>Dirección de Finanzas</b>CFO</div>
+            <div class="org-mini__cell"><b>Dirección de Operaciones</b>COO — consultoría, educación, I+D</div>
+            <div class="org-mini__cell"><b>Dirección de Información y Marketing</b>CMIO</div>
+            <div class="org-mini__cell"><b>Consejo Consultivo</b>Gobierno corporativo</div>
+            <div class="org-mini__cell"><b>Equipo por honorarios</b>Especialistas bajo demanda</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mv-grid">
+        <div class="mv-card">
+          <div class="mv-card__head"><svg><use href="#i-target" xlink:href="#i-target"/></svg><h3>Misión</h3></div>
+          <p>Somos un equipo de especialistas que fortalece y hace crecer a empresas privadas, públicas y emprendedores, mediante consultoría, capacitación y educación empresarial orientadas a la calidad, la innovación y la mejora de los procesos administrativos y operativos.</p>
+        </div>
+        <div class="mv-card">
+          <div class="mv-card__head"><svg><use href="#i-eye" xlink:href="#i-eye"/></svg><h3>Visión</h3></div>
+          <p>Ser referentes nacionales e internacionales en consultoría, educación y capacitación empresarial, apoyando al sector público, privado y al nuevo emprendimiento con servicios respaldados por las últimas estrategias gerenciales, tecnológicas, educativas y ambientales.</p>
+        </div>
+        <div class="mv-card">
+          <div class="mv-card__head"><svg><use href="#i-compass" xlink:href="#i-compass"/></svg><h3>Valores</h3></div>
+          <p>La cultura de trabajo que sostiene cada consultoría:</p>
+          <div class="values-cloud">
+            <span class="value-chip">Innovación</span>
+            <span class="value-chip">Compromiso</span>
+            <span class="value-chip">Vocación de servicio</span>
+            <span class="value-chip">Honradez</span>
+            <span class="value-chip">Mejora continua</span>
+            <span class="value-chip">Cooperación</span>
+            <span class="value-chip">Responsabilidad</span>
+            <span class="value-chip">Trabajo en equipo</span>
+            <span class="value-chip">Liderazgo</span>
+            <span class="value-chip">Ambientalismo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Servicios ============ -->
+<section class="section mist" id="servicios">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Catálogo de servicios</span>
+      <h2 class="section-title">Cuatro áreas de atención, un mismo estándar de calidad.</h2>
+      <p class="section-desc">El catálogo vigente de Consultores TAF, tal como opera hoy. Administración y Educación están activas; Ambiente y Tecnología están en preparación para su próximo lanzamiento digital.</p>
+    </div>
+
+    <div class="services-grid">
+      <div class="service-card reveal">
+        <div class="service-card__icon"><svg><use href="#i-briefcase" xlink:href="#i-briefcase"/></svg></div>
+        <span class="service-card__status active"><svg><use href="#i-check" xlink:href="#i-check"/></svg>Activo</span>
+        <h3>Administración</h3>
+        <ul class="service-card__list">
+          <li>Constitución de empresas</li>
+          <li>Permisología de operatividad</li>
+          <li>Auditoría</li>
+          <li>Contabilidad y gestión financiera</li>
+          <li>Cambio organizacional</li>
+          <li>Organización y métodos</li>
+        </ul>
+      </div>
+
+      <div class="service-card reveal">
+        <div class="service-card__icon"><svg><use href="#i-cap" xlink:href="#i-cap"/></svg></div>
+        <span class="service-card__status active"><svg><use href="#i-check" xlink:href="#i-check"/></svg>Activo</span>
+        <h3>Educación</h3>
+        <ul class="service-card__list">
+          <li>Asesoría técnica para el desarrollo de las Ciencias de la Educación</li>
+          <li>Formación para el trabajo y la actividad empresarial y productiva</li>
+          <li>Capacitación "in company" y por plataforma virtual</li>
+        </ul>
+      </div>
+
+      <div class="service-card reveal">
+        <div class="service-card__icon"><svg><use href="#i-leaf" xlink:href="#i-leaf"/></svg></div>
+        <span class="service-card__status soon"><svg><use href="#i-clock" xlink:href="#i-clock"/></svg>Próximamente</span>
+        <h3>Ambiente</h3>
+        <ul class="service-card__list">
+          <li>Asesoría para la gestión ambiental</li>
+          <li>Acompañamiento normativo y de sostenibilidad</li>
+        </ul>
+      </div>
+
+      <div class="service-card reveal">
+        <div class="service-card__icon"><svg><use href="#i-cpu" xlink:href="#i-cpu"/></svg></div>
+        <span class="service-card__status soon"><svg><use href="#i-clock" xlink:href="#i-clock"/></svg>Próximamente</span>
+        <h3>Tecnología</h3>
+        <ul class="service-card__list">
+          <li>Gestión de redes sociales</li>
+          <li>Transformación digital de procesos</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Problem band ============ -->
+<section class="section tight problem-band">
+  <div class="container">
+    <div class="section-head on-ink">
+      <span class="eyebrow">Por qué existe NEXUS-TAF</span>
+      <h2 class="section-title">Cuatro fricciones que frenaban el crecimiento de TAF.</h2>
+      <p class="section-desc">Detectadas junto a la Dirección de Operaciones y la Presidencia de la empresa durante el levantamiento de información del proyecto.</p>
+    </div>
+    <div class="problem-grid">
+      <div class="problem-item reveal">
+        <span>01</span>
+        <h4>Fragmentación</h4>
+        <p>Sin plataforma centralizada, la información vive en silos y dificulta la colaboración entre ramas de consultoría.</p>
+      </div>
+      <div class="problem-item reveal">
+        <span>02</span>
+        <h4>Opacidad</h4>
+        <p>Los clientes no tienen visibilidad en tiempo real del avance de su asesoría, lo que erosiona la confianza.</p>
+      </div>
+      <div class="problem-item reveal">
+        <span>03</span>
+        <h4>Ineficiencia</h4>
+        <p>No existe un mecanismo automatizado para equilibrar la carga de trabajo según disponibilidad y especialidad.</p>
+      </div>
+      <div class="problem-item reveal">
+        <span>04</span>
+        <h4>Desconexión técnica</h4>
+        <p>Herramientas heterogéneas impiden estandarizar procesos bajo un marco de trabajo ágil común.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Plataforma ============ -->
+<section class="section" id="plataforma">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">La plataforma, módulo por módulo</span>
+      <h2 class="section-title">Cinco paneles, un solo flujo de trabajo.</h2>
+      <p class="section-desc">De la autenticación al reporte ejecutivo: así se ve cada panel que consultores, clientes y directiva usan a diario dentro de NEXUS-TAF.</p>
+    </div>
+
+    <div class="tab-nav" role="tablist" aria-label="Módulos de la plataforma">
+      <button class="tab-btn active" data-tab="mfa"><svg><use href="#i-shield" xlink:href="#i-shield"/></svg>Autenticación MFA</button>
+      <button class="tab-btn" data-tab="roles"><svg><use href="#i-users" xlink:href="#i-users"/></svg>Panel de roles</button>
+      <button class="tab-btn" data-tab="scrum"><svg><use href="#i-kanban" xlink:href="#i-kanban"/></svg>Tablero Scrum</button>
+      <button class="tab-btn" data-tab="cliente"><svg><use href="#i-file" xlink:href="#i-file"/></svg>Portal del cliente</button>
+      <button class="tab-btn" data-tab="bi"><svg><use href="#i-chart" xlink:href="#i-chart"/></svg>Dashboard BI</button>
+    </div>
+
+    <!-- Panel 1: MFA -->
+    <div class="tab-panel active" id="tab-mfa">
+      <div class="module-shell">
+        <div class="module-copy">
+          <span class="tag">Sprint 1 · Módulo de Seguridad</span>
+          <h3>Login con verificación de doble factor</h3>
+          <p>El acceso exige correo y contraseña válidos; superada esa capa, la interfaz solicita un código TOTP de 6 dígitos enviado por correo antes de abrir cualquier módulo.</p>
+          <ul class="module-copy__list">
+            <li><svg><use href="#i-check" xlink:href="#i-check"/></svg>Contraseñas resguardadas con hash y control de intentos fallidos</li>
+            <li><svg><use href="#i-check" xlink:href="#i-check"/></svg>Sesión emitida por JWT con expiración corta</li>
+            <li><svg><use href="#i-check" xlink:href="#i-check"/></svg>Bloqueo automático tras intentos fallidos repetidos</li>
+          </ul>
+        </div>
+        <div class="module-visual">
+          <div class="device-frame">
+            <div class="device-frame__bar"><span></span><span></span><span></span></div>
+            <div class="login-mock">
+              <h4>NEXUS-TAF</h4>
+              <p class="sub">Autenticación híbrida segura</p>
+              <div class="mock-field">admin@consultorestaf.com</div>
+              <div class="mock-field">••••••••••</div>
+              <p class="sub" style="margin:14px 0 6px;">Código de verificación</p>
+              <div class="otp-row">
+                <div class="otp-box">4</div><div class="otp-box">2</div><div class="otp-box">1</div>
+                <div class="otp-box">9</div><div class="otp-box">0</div><div class="otp-box">7</div>
+              </div>
+              <a href="#" class="btn btn-primary btn-block" onclick="return false;">Ingresar</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel 2: Roles -->
+    <div class="tab-panel" id="tab-roles">
+      <div class="module-shell">
+        <div class="module-copy">
+          <span class="tag">Sprint 1 · Módulo de Seguridad</span>
+          <h3>Administración de roles y permisos</h3>
+          <p>Panel exclusivo del administrador para asignar, revocar o modificar el nivel de acceso de cada persona sobre PostgreSQL, el motor que resguarda usuarios y credenciales.</p>
+          <ul class="module-copy__list">
+            <li><svg><use href="#i-check" xlink:href="#i-check"/></svg>Cuatro roles: Administrador, Directivo, Consultor y Cliente</li>
+            <li><svg><use href="#i-check" xlink:href="#i-check"/></svg>Middleware de autorización en cada endpoint sensible</li>
+            <li><svg><use href="#i-check" xlink:href="#i-check"/></svg>Cambios de rol trazados por el módulo de auditoría</li>
+          </ul>
+        </div>
+        <div class="module-visual">
+          <div class="device-frame">
+            <div class="device-frame__bar"><span></span><span></span><span></span></div>
+            <table class="roles-table">
+              <thead><tr><th>Usuario</th><th>Correo</th><th>Rol</th></tr></thead>
+              <tbody>
+                <tr><td>Rosana Ochoa</td><td>rochoa@taf.com</td><td><span class="role-pill">Administrador</span></td></tr>
+                <tr><td>Leticia Cuevas</td><td>lcuevas@taf.com</td><td><span class="role-pill">Directivo</span></td></tr>
+                <tr><td>J. Pérez</td><td>jperez@taf.com</td><td><span class="role-pill">Consultor</span></td></tr>
+                <tr><td>Empresa XYZ</td><td>cliente@xyz.com</td><td><span class="role-pill">Cliente</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel 3: Scrum -->
+    <div class="tab-panel" id="tab-scrum">
+      <div class="module-shell">
+        <div class="module-copy">
+          <span class="tag">Sprint 2 · Módulo Operativo</span>
+          <h3>Tablero Scrum del consultor</h3>
+          <p>Tablero con arrastrar y soltar dividido en tres columnas obligatorias. Cada tarjeta persiste en tiempo real como documento flexible en MongoDB.</p>
+          <ul class="module-copy__list">
+            <li><svg><use href="#i-check" xlink:href="#i-check"/></svg>Columnas: Por hacer, En progreso y Hecho</li>
+            <li><svg><use href="#i-check" xlink:href="#i-check"/></svg>CRUD completo de tareas con prioridad y responsable</li>
+            <li><svg><use href="#i-check" xlink:href="#i-check"/></svg>Métricas de Burndown calculadas por sprint</li>
+          </ul>
+        </div>
+        <div class="module-visual">
+          <div class="device-frame">
+            <div class="device-frame__bar"><span></span><span></span><span></span></div>
+            <div class="kanban">
+              <div class="kanban-col">
+                <h5>Por hacer</h5>
+                <div class="kanban-card"><b>TS03-04</b>Diseño de formulario de hitos</div>
+                <div class="kanban-card"><b>TS03-06</b>Validación de carga de archivos</div>
+              </div>
+              <div class="kanban-col">
+                <h5>En progreso</h5>
+                <div class="kanban-card"><b>TS02-02</b>Integración firma digital</div>
+              </div>
+              <div class="kanban-col">
+                <h5>Hecho</h5>
+                <div class="kanban-card"><b>TS01-07</b>Frontend de autenticación MFA</div>
+                <div class="kanban-card"><b>TS01-02</b>Esquema de base de datos híbrida</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel 4: Cliente -->
+    <div class="tab-panel" id="tab-cliente">
+      <div class="module-shell">
+        <div class="module-copy">
+          <span class="tag">Sprint 3 · Módulo del Cliente</span>
+          <h3>Portal de seguimiento para el cliente</h3>
+          <p>El cliente externo ve una línea de tiempo con los hitos alcanzados en su asesoría, carga documentos con el componente Uploader y descarga certificados firmados.</p>
+          <ul class="module-copy__list">
+            <li><svg><use href="#i-check" xlink:href="#i-check"/></svg>Carga validada de PDF, PNG y JPG hasta 10&nbsp;MB</li>
+            <li><svg><use href="#i-check" xlink:href="#i-check"/></svg>Descarga de entregables con trazabilidad de auditoría</li>
+            <li><svg><use href="#i-check" xlink:href="#i-check"/></svg>Estado del proyecto consultado en tiempo real</li>
+          </ul>
+        </div>
+        <div class="module-visual">
+          <div class="device-frame">
+            <div class="device-frame__bar"><span></span><span></span><span></span></div>
+            <p class="sub" style="color:var(--on-ink-muted); font-size:12px; margin-bottom:10px;">Avance del expediente — Constitución de empresa</p>
+            <div class="progress-track">
+              <div class="progress-dot"></div><div class="progress-line"></div>
+              <div class="progress-dot"></div><div class="progress-line"></div>
+              <div class="progress-dot todo"></div><div class="progress-line todo"></div>
+              <div class="progress-dot todo"></div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-row__name"><svg><use href="#i-file" xlink:href="#i-file"/></svg>Informe_diagnostico.pdf</div>
+              <svg class="dl"><use href="#i-download" xlink:href="#i-download"/></svg>
+            </div>
+            <div class="doc-row">
+              <div class="doc-row__name"><svg><use href="#i-file" xlink:href="#i-file"/></svg>Certificado_firmado.pdf</div>
+              <svg class="dl"><use href="#i-download" xlink:href="#i-download"/></svg>
+            </div>
+            <div class="doc-row">
+              <div class="doc-row__name"><svg><use href="#i-upload" xlink:href="#i-upload"/></svg>Cargar nuevo documento…</div>
+              <svg class="dl"><use href="#i-upload" xlink:href="#i-upload"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel 5: BI -->
+    <div class="tab-panel" id="tab-bi">
+      <div class="module-shell">
+        <div class="module-copy">
+          <span class="tag">Sprint 4 · Módulo de Inteligencia de Negocio</span>
+          <h3>Dashboard directivo</h3>
+          <p>Consolida PostgreSQL (finanzas) y MongoDB (sprints) en gráficos interactivos pensados para la Presidencia y la Dirección de Operaciones.</p>
+          <ul class="module-copy__list">
+            <li><svg><use href="#i-check" xlink:href="#i-check"/></svg>Balance de ingresos y gastos por área consultiva</li>
+            <li><svg><use href="#i-check" xlink:href="#i-check"/></svg>Burndown chart del ciclo ágil vigente</li>
+            <li><svg><use href="#i-check" xlink:href="#i-check"/></svg>Filtros avanzados por rango de fechas y cliente</li>
+          </ul>
+        </div>
+        <div class="module-visual">
+          <div class="device-frame">
+            <div class="device-frame__bar"><span></span><span></span><span></span></div>
+            <div class="bi-mock">
+              <div class="bi-card">
+                <h6>Balance por área (PostgreSQL)</h6>
+                <div class="bars">
+                  <div class="bar income" style="height:70%;"></div>
+                  <div class="bar expense" style="height:24%;"></div>
+                  <div class="bar income" style="height:55%;"></div>
+                  <div class="bar expense" style="height:18%;"></div>
+                </div>
+              </div>
+              <div class="bi-card">
+                <h6>Burndown (MongoDB)</h6>
+                <svg viewBox="0 0 160 90" width="100%" height="90">
+                  <polyline points="6,10 40,28 76,42 112,64 154,82" fill="none" stroke="#4C63C9" stroke-width="2"/>
+                  <circle cx="6" cy="10" r="2.6" fill="#4C63C9"/><circle cx="40" cy="28" r="2.6" fill="#4C63C9"/>
+                  <circle cx="76" cy="42" r="2.6" fill="#4C63C9"/><circle cx="112" cy="64" r="2.6" fill="#4C63C9"/>
+                  <circle cx="154" cy="82" r="2.6" fill="#4C63C9"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Sistema ============ -->
+<section class="section mist" id="sistema">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Diseño técnico</span>
+      <h2 class="section-title">Arquitectura, base de datos y requisitos del proyecto.</h2>
+      <p class="section-desc">La documentación técnica que sostiene NEXUS-TAF, resumida en tres vistas: cómo está construido, dónde vive cada dato y qué debía cumplir desde el primer sprint.</p>
+    </div>
+
+    <div class="sistema-tabs" role="tablist" aria-label="Vistas del sistema">
+      <button class="sistema-tab-btn active" data-sistema="arquitectura">Arquitectura</button>
+      <button class="sistema-tab-btn" data-sistema="datos">Base de datos</button>
+      <button class="sistema-tab-btn" data-sistema="requisitos">Requisitos</button>
+    </div>
+
+    <!-- ===== Arquitectura ===== -->
+    <div class="sistema-panel active" id="sistema-arquitectura">
+      <h3 style="font-family:var(--font-display); font-size:20px; margin-bottom:18px;">Stack tecnológico</h3>
+      <div class="stack-grid">
+        <div class="stack-card"><svg><use href="#i-layers" xlink:href="#i-layers"/></svg><b>Frontend</b><strong>React / Angular</strong><p>Interfaces reactivas, modulares y de alto rendimiento por panel.</p></div>
+        <div class="stack-card"><svg><use href="#i-server" xlink:href="#i-server"/></svg><b>Backend</b><strong>Node.js (NestJS) / Django</strong><p>Manejo eficiente de concurrencia y escalabilidad de servicios.</p></div>
+        <div class="stack-card"><svg><use href="#i-db" xlink:href="#i-db"/></svg><b>Base de datos</b><strong>PostgreSQL + MongoDB</strong><p>SQL para integridad financiera; NoSQL para archivos, tareas y logs.</p></div>
+        <div class="stack-card"><svg><use href="#i-cpu" xlink:href="#i-cpu"/></svg><b>Infraestructura</b><strong>Docker &amp; Kubernetes</strong><p>Portabilidad y despliegue continuo (CI/CD) de cada microservicio.</p></div>
+        <div class="stack-card"><svg><use href="#i-route" xlink:href="#i-route"/></svg><b>Patrón</b><strong>Microservicios / MVC</strong><p>Mantenimiento independiente por cada rama de consultoría.</p></div>
+      </div>
+
+      <h3 style="font-family:var(--font-display); font-size:20px; margin:44px 0 4px;">Principios de diseño del webservice</h3>
+      <div class="principles-grid">
+        <div class="principle-card"><svg><use href="#i-lock" xlink:href="#i-lock"/></svg><h5>Seguridad</h5><p>HTTPS, validación de tokens JWT y control de acceso por roles en cada endpoint.</p></div>
+        <div class="principle-card"><svg><use href="#i-layers" xlink:href="#i-layers"/></svg><h5>Escalabilidad</h5><p>Separación por microservicios y desacoplamiento funcional entre módulos.</p></div>
+        <div class="principle-card"><svg><use href="#i-route" xlink:href="#i-route"/></svg><h5>Interoperabilidad</h5><p>Respuestas en JSON y estructura REST uniforme para integraciones de terceros.</p></div>
+        <div class="principle-card"><svg><use href="#i-check" xlink:href="#i-check"/></svg><h5>Mantenibilidad</h5><p>Código modular, endpoints bien definidos y documentación técnica viva.</p></div>
+      </div>
+
+      <h3 style="font-family:var(--font-display); font-size:20px; margin:44px 0 4px;">Flujo de una solicitud</h3>
+      <div class="flow-steps">
+        <div class="flow-step"><span class="flow-step__num">01</span><p>El usuario interactúa con el frontend y dispara una solicitud.</p></div>
+        <div class="flow-step"><span class="flow-step__num">02</span><p>El frontend envía la petición al backend vía API REST.</p></div>
+        <div class="flow-step"><span class="flow-step__num">03</span><p>El backend valida autenticación, autorización y reglas de negocio.</p></div>
+        <div class="flow-step"><span class="flow-step__num">04</span><p>El backend consulta PostgreSQL o MongoDB según el dominio del dato.</p></div>
+        <div class="flow-step"><span class="flow-step__num">05</span><p>El sistema responde en JSON y el frontend actualiza la interfaz.</p></div>
+      </div>
+
+      <h3 style="font-family:var(--font-display); font-size:20px; margin:44px 0 4px;">Endpoints principales</h3>
+      <div class="req-table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Método</th><th>Endpoint</th><th>Función</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method post">POST</span></td><td><code>/api/auth/register</code></td><td>Registrar usuario</td></tr>
+            <tr><td><span class="method post">POST</span></td><td><code>/api/auth/login</code></td><td>Iniciar sesión</td></tr>
+            <tr><td><span class="method post">POST</span></td><td><code>/api/auth/mfa</code></td><td>Validar segundo factor</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/api/users</code></td><td>Listar usuarios</td></tr>
+            <tr><td><span class="method put">PUT</span></td><td><code>/api/users/:id/role</code></td><td>Asignar o cambiar rol</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/api/tasks</code></td><td>Obtener tareas</td></tr>
+            <tr><td><span class="method post">POST</span></td><td><code>/api/tasks</code></td><td>Crear tarea</td></tr>
+            <tr><td><span class="method patch">PATCH</span></td><td><code>/api/tasks/:id</code></td><td>Actualizar estado o datos</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/api/projects/:id/status</code></td><td>Consultar progreso del proyecto</td></tr>
+            <tr><td><span class="method post">POST</span></td><td><code>/api/documents/upload</code></td><td>Cargar documento</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/api/documents/download/:id</code></td><td>Descargar documento</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/api/bi/reports</code></td><td>Consultar reportes BI</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== Base de datos ===== -->
+    <div class="sistema-panel" id="sistema-datos">
+      <p style="max-width:70ch; color:var(--text-muted); margin-bottom:28px; font-size:15px; line-height:1.7;">La base de datos se diseñó bajo un enfoque híbrido: un motor relacional para lo crítico y transaccional, y un motor documental para lo operativo y flexible. Ningún dato financiero vive fuera de PostgreSQL; ningún tablero ágil depende de un esquema rígido.</p>
+
+      <div class="db-diagram">
+        <div class="db-col-sql">
+          <div class="db-col-head"><svg><use href="#i-db" xlink:href="#i-db"/></svg><b>PostgreSQL · relacional</b></div>
+          <div class="table-chip"><b>usuarios</b><span>Datos de acceso y perfil</span></div>
+          <div class="table-chip"><b>roles</b><span>Permisos y tipos de usuario</span></div>
+          <div class="table-chip"><b>credenciales</b><span>Hashes, MFA y control de intentos</span></div>
+          <div class="table-chip"><b>areas_consultivas</b><span>Clasificación de las ramas de consultoría</span></div>
+          <div class="table-chip"><b>finanzas</b><span>Ingresos y gastos por área</span></div>
+        </div>
+
+        <div class="db-connector">
+          <div class="chip"><svg><use href="#i-route" xlink:href="#i-route"/></svg></div>
+          <span>Capa de<br>sincronización<br>API&nbsp;REST</span>
+        </div>
+
+        <div class="db-col-nosql">
+          <div class="db-col-head"><svg><use href="#i-layers" xlink:href="#i-layers"/></svg><b>MongoDB · documental</b></div>
+          <div class="collection-node"><b>proyectos</b><span>Consultorías y expedientes</span></div>
+          <div class="collection-node"><b>sprints</b><span>Ciclos de trabajo ágil</span></div>
+          <div class="collection-node"><b>hitos</b><span>Avances importantes del proyecto</span></div>
+          <div class="collection-node"><b>tareas</b><span>Tablero Scrum del consultor</span></div>
+          <div class="collection-node"><b>documentos</b><span>Metadatos de archivos cargados</span></div>
+          <div class="collection-node"><b>auditorias</b><span>Logs inmutables de eventos</span></div>
+          <div class="collection-node"><b>descargas</b><span>Registro de eventos de descarga</span></div>
+        </div>
+      </div>
+
+      <h3 style="font-family:var(--font-display); font-size:20px; margin:44px 0 4px;">Asignación de procesos por motor</h3>
+      <div class="req-table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Proceso</th><th>Base de datos</th><th>Estructura</th></tr></thead>
+          <tbody>
+            <tr><td>Autenticación</td><td>PostgreSQL</td><td>usuarios, credenciales</td></tr>
+            <tr><td>Roles y permisos</td><td>PostgreSQL</td><td>roles</td></tr>
+            <tr><td>Gestión operativa</td><td>MongoDB</td><td>proyectos, sprints, tareas</td></tr>
+            <tr><td>Seguimiento de hitos</td><td>MongoDB</td><td>hitos</td></tr>
+            <tr><td>Portal documental</td><td>MongoDB + almacenamiento externo</td><td>documentos</td></tr>
+            <tr><td>Auditoría</td><td>MongoDB</td><td>auditorias, descargas</td></tr>
+            <tr><td>BI financiero</td><td>PostgreSQL</td><td>finanzas, areas_consultivas</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="font-family:var(--font-display); font-size:20px; margin:44px 0 18px;">Entidades principales del modelo</h3>
+      <div class="entity-grid">
+        <div class="entity-card sql">
+          <div class="entity-card__head">Usuario <span>PostgreSQL</span></div>
+          <div class="entity-card__body">
+            <div>id_usuario · PK</div><div>nombre, apellido</div><div>email, password_hash</div><div>estado_bloqueo</div><div>id_rol · FK</div>
+          </div>
+        </div>
+        <div class="entity-card sql">
+          <div class="entity-card__head">Finanza <span>PostgreSQL</span></div>
+          <div class="entity-card__body">
+            <div>id_finanza · PK</div><div>area, categoria</div><div>tipo_movimiento</div><div>monto, fecha</div>
+          </div>
+        </div>
+        <div class="entity-card nosql">
+          <div class="entity-card__head">Proyecto <span>MongoDB</span></div>
+          <div class="entity-card__body">
+            <div>id_proyecto · PK</div><div>nombre_proyecto</div><div>cliente_id · FK</div><div>fecha_inicio / fin</div><div>estado</div>
+          </div>
+        </div>
+        <div class="entity-card nosql">
+          <div class="entity-card__head">Tarea <span>MongoDB</span></div>
+          <div class="entity-card__body">
+            <div>id_tarea · PK</div><div>id_sprint · FK</div><div>titulo, prioridad</div><div>responsable, estado</div>
+          </div>
+        </div>
+        <div class="entity-card nosql">
+          <div class="entity-card__head">Documento <span>MongoDB</span></div>
+          <div class="entity-card__body">
+            <div>id_documento · PK</div><div>id_cliente · FK</div><div>tipo_archivo, tamano</div><div>firmado_digitalmente</div>
+          </div>
+        </div>
+        <div class="entity-card nosql">
+          <div class="entity-card__head">Auditoría <span>MongoDB</span></div>
+          <div class="entity-card__body">
+            <div>id_auditoria · PK</div><div>id_usuario · FK</div><div>tipo_evento, modulo_afectado</div><div>fecha_hora, direccion_ip</div>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="font-family:var(--font-display); font-size:20px; margin:36px 0 4px;">Relaciones clave del modelo</h3>
+      <ul class="relationships-list">
+        <li><b>Rol</b> 1:N <b>Usuario</b></li>
+        <li><b>Usuario</b> 1:1 <b>Credencial</b></li>
+        <li><b>Cliente</b> 1:N <b>Proyecto</b></li>
+        <li><b>Proyecto</b> 1:N <b>Sprint</b></li>
+        <li><b>Proyecto</b> 1:N <b>Hito</b></li>
+        <li><b>Sprint</b> 1:N <b>Tarea</b></li>
+        <li><b>Cliente</b> 1:N <b>Documento</b></li>
+        <li><b>Usuario</b> 1:N <b>Auditoría</b></li>
+        <li><b>ÁreaConsultiva</b> 1:N <b>Finanza</b></li>
+      </ul>
+    </div>
+
+    <!-- ===== Requisitos ===== -->
+    <div class="sistema-panel" id="sistema-requisitos">
+      <h3 style="font-family:var(--font-display); font-size:20px; margin-bottom:4px;">Historias de usuario por sprint</h3>
+      <div class="req-table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Código</th><th>Requisito</th><th>Prioridad</th><th>Sprint</th></tr></thead>
+          <tbody>
+            <tr><td><code>HU01</code></td><td>Autenticación segura con MFA</td><td><span class="priority alta">Alta</span></td><td>Sprint 1</td></tr>
+            <tr><td><code>HU02</code></td><td>Gestión de roles</td><td><span class="priority alta">Alta</span></td><td>Sprint 1</td></tr>
+            <tr><td><code>HU03</code></td><td>Tablero Scrum</td><td><span class="priority alta">Alta</span></td><td>Sprint 2</td></tr>
+            <tr><td><code>HU04</code></td><td>Burndown y métricas</td><td><span class="priority media">Media</span></td><td>Sprint 2</td></tr>
+            <tr><td><code>HU05</code></td><td>Descarga de informes firmados</td><td><span class="priority alta">Alta</span></td><td>Sprint 3</td></tr>
+            <tr><td><code>HU06</code></td><td>Carga de documentos</td><td><span class="priority media">Media</span></td><td>Sprint 3</td></tr>
+            <tr><td><code>HU07</code></td><td>Reportes financieros BI</td><td><span class="priority baja">Baja</span></td><td>Sprint 4</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="font-family:var(--font-display); font-size:20px; margin:12px 0 0;">Limitantes no funcionales del sistema</h3>
+      <div class="nfr-grid">
+        <div class="nfr-card"><span class="nfr-card__num">NFR·01</span><h5>Seguridad y privacidad</h5><p>Cifrado de extremo a extremo y autenticación multifactor por la sensibilidad legal de los datos de cada cliente.</p></div>
+        <div class="nfr-card"><span class="nfr-card__num">NFR·02</span><h5>Interoperabilidad</h5><p>Integración con herramientas de terceros —bancarias, gubernamentales, documentales— vía arquitectura API REST.</p></div>
+        <div class="nfr-card"><span class="nfr-card__num">NFR·03</span><h5>Escalabilidad crítica</h5><p>Crecimiento modular por microservicios que permite sumar ramas de consultoría sin afectar las existentes.</p></div>
+        <div class="nfr-card"><span class="nfr-card__num">NFR·04</span><h5>Consistencia híbrida</h5><p>Convivencia de transacciones rígidas (finanzas) con esquemas flexibles (documentos técnicos) vía SQL + NoSQL.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Roadmap ============ -->
+<section class="section on-ink" id="roadmap">
+  <div class="container">
+    <div class="section-head on-ink">
+      <span class="eyebrow">Hoja de ruta</span>
+      <h2 class="section-title">Cuatro sprints, un módulo por entrega.</h2>
+      <p class="section-desc">La seguridad se construyó primero por diseño: sin ella, ningún otro módulo podía manejar datos reales de clientes.</p>
+    </div>
+
+    <div class="roadmap-track">
+      <div class="roadmap-step reveal">
+        <div class="roadmap-step__num">01</div>
+        <h4>Cimientos de seguridad</h4>
+        <p>Arquitectura base con Docker, esquema de base de datos híbrida y control de acceso.</p>
+        <div class="roadmap-step__mods"><span>Login MFA</span><span>JWT</span><span>Roles</span></div>
+      </div>
+      <div class="roadmap-step reveal">
+        <div class="roadmap-step__num">02</div>
+        <h4>Núcleo operativo</h4>
+        <p>Tablero Scrum con arrastrar y soltar, CRUD de tareas y persistencia en tiempo real.</p>
+        <div class="roadmap-step__mods"><span>Kanban</span><span>Burndown</span></div>
+      </div>
+      <div class="roadmap-step reveal">
+        <div class="roadmap-step__num">03</div>
+        <h4>Portal del cliente</h4>
+        <p>Carga y descarga de documentos, firma digital y seguimiento de hitos del proyecto.</p>
+        <div class="roadmap-step__mods"><span>Uploader</span><span>Firma digital</span></div>
+      </div>
+      <div class="roadmap-step reveal">
+        <div class="roadmap-step__num">04</div>
+        <h4>Inteligencia de negocio</h4>
+        <p>Dashboard directivo con reportes financieros y comparativos por área consultiva.</p>
+        <div class="roadmap-step__mods"><span>BI</span><span>Reportes</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Contacto ============ -->
+<section class="section" id="contacto">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Conversemos</span>
+      <h2 class="section-title">Solicita una asesoría o una demo de la plataforma.</h2>
+      <p class="section-desc">Cuéntanos qué rama de consultoría necesitas y te contactamos dentro del horario laboral de Consultores TAF.</p>
+    </div>
+
+    <div class="contact-grid">
+      <div class="contact-info">
+        <div class="info-row">
+          <svg><use href="#i-pin" xlink:href="#i-pin"/></svg>
+          <div><b>Oficina en Barquisimeto</b><span>Calle 50 entre carreras 14 y 15, N.º 14&#8209;30. Municipio Iribarren, Parroquia Concepción, estado Lara, Venezuela.</span></div>
+        </div>
+        <div class="info-row">
+          <svg><use href="#i-clock" xlink:href="#i-clock"/></svg>
+          <div><b>Horario de atención</b><span>Lunes a viernes, 8:00 a.m. – 4:30 p.m. (1 hora de almuerzo).</span></div>
+        </div>
+        <div class="info-row">
+          <svg><use href="#i-mail" xlink:href="#i-mail"/></svg>
+          <div><b>Correo</b><span>contacto@consultorestaf.com</span></div>
+        </div>
+        <div class="info-row">
+          <svg><use href="#i-building" xlink:href="#i-building"/></svg>
+          <div><b>Razón social</b><span>Sociedad Civil Consultores TAF — RIF J&#8209;412582585</span></div>
+        </div>
+
+        <div class="map-card">
+          <div class="map-card__pin">
+            <svg><use href="#i-pin" xlink:href="#i-pin"/></svg>
+            <span>Parroquia Concepción<br>Barquisimeto, Lara</span>
+          </div>
+        </div>
+      </div>
+
+      <form class="contact-form" id="contactForm">
+        <div class="form-row">
+          <div class="field"><label for="f-name">Nombre completo</label><input id="f-name" type="text" placeholder="Tu nombre" required></div>
+          <div class="field"><label for="f-company">Empresa</label><input id="f-company" type="text" placeholder="Nombre de tu empresa"></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label for="f-email">Correo</label><input id="f-email" type="email" placeholder="tucorreo@empresa.com" required></div>
+          <div class="field"><label for="f-area">Área de interés</label>
+            <select id="f-area">
+              <option>Administración</option>
+              <option>Educación</option>
+              <option>Ambiente</option>
+              <option>Tecnología</option>
+              <option>Demo de la plataforma NEXUS-TAF</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label for="f-msg">Cuéntanos qué necesitas</label><textarea id="f-msg" placeholder="Describe brevemente tu proyecto o consultoría"></textarea></div>
+        <button type="submit" class="btn btn-primary btn-block">Enviar solicitud</button>
+        <div class="form-success" id="formSuccess"><svg><use href="#i-check" xlink:href="#i-check"/></svg>Gracias — recibimos tu solicitud y te contactaremos dentro del horario laboral.</div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Footer ============ -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="logo">
+          <svg class="logo-mark" viewBox="0 0 40 40" fill="none">
+            <rect x="1" y="1" width="17" height="17" rx="4" stroke="#4C63C9" stroke-width="2"/>
+            <circle cx="30" cy="10" r="8.5" stroke="#17B39F" stroke-width="2"/>
+            <circle cx="30" cy="10" r="2" fill="#17B39F"/>
+            <circle cx="24" cy="30" r="6.5" stroke="#E8A33D" stroke-width="2"/>
+          </svg>
+          <span class="logo-text">NEXUS&#8209;TAF</span>
+        </div>
+        <p>Ecosistema digital integrado para la gestión de consultoría multidimensional de Sociedad Civil Consultores TAF.</p>
+      </div>
+      <div class="footer-col">
+        <h6>Sitio</h6>
+        <ul>
+          <li><a href="#empresa">Empresa</a></li>
+          <li><a href="#servicios">Servicios</a></li>
+          <li><a href="#plataforma">Plataforma</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h6>Sistema</h6>
+        <ul>
+          <li><a href="#sistema">Arquitectura</a></li>
+          <li><a href="#sistema">Base de datos</a></li>
+          <li><a href="#roadmap">Roadmap</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h6>Contacto</h6>
+        <ul>
+          <li><a href="#contacto">Barquisimeto, Lara</a></li>
+          <li><a href="#contacto">Lun–Vie, 8:00–4:30</a></li>
+          <li><a href="#contacto">contacto@consultorestaf.com</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Sociedad Civil Consultores TAF · RIF J&#8209;412582585</span>
+      <span>Proyecto NEXUS-TAF — Ingeniería en Informática</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  // Sticky header state
+  var header = document.getElementById('siteHeader');
+  var onScroll = function(){
+    if(window.scrollY > 24){ header.classList.add('scrolled'); }
+    else{ header.classList.remove('scrolled'); }
+  };
+  document.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+
+  // Mobile nav drawer
+  var toggle = document.getElementById('navToggle');
+  var drawer = document.getElementById('navDrawer');
+  toggle.addEventListener('click', function(){
+    var open = drawer.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    toggle.innerHTML = open ? '<svg class="icon"><use href="#i-close" xlink:href="#i-close"/></svg>' : '<svg class="icon"><use href="#i-menu" xlink:href="#i-menu"/></svg>';
+  });
+  drawer.querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click', function(){
+      drawer.classList.remove('open');
+      toggle.setAttribute('aria-expanded','false');
+      toggle.innerHTML = '<svg class="icon"><use href="#i-menu" xlink:href="#i-menu"/></svg>';
+    });
+  });
+
+  // Active nav link on scroll
+  var sections = ['empresa','servicios','plataforma','sistema','roadmap','contacto']
+    .map(function(id){ return document.getElementById(id); })
+    .filter(Boolean);
+  var navLinks = document.querySelectorAll('.nav-links a');
+  var setActive = function(){
+    var pos = window.scrollY + 140;
+    var current = null;
+    sections.forEach(function(sec){
+      if(sec.offsetTop <= pos){ current = sec.id; }
+    });
+    navLinks.forEach(function(link){
+      link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+    });
+  };
+  document.addEventListener('scroll', setActive, {passive:true});
+  setActive();
+
+  // Platform module tabs
+  var tabBtns = document.querySelectorAll('.tab-btn');
+  tabBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      tabBtns.forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  // Sistema sub-tabs
+  var sysBtns = document.querySelectorAll('.sistema-tab-btn');
+  sysBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      sysBtns.forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('.sistema-panel').forEach(function(p){ p.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('sistema-' + btn.dataset.sistema).classList.add('active');
+    });
+  });
+
+  // Reveal on scroll
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){
+          entry.target.classList.add('in');
+          io.unobserve(entry.target);
+        }
+      });
+    }, {threshold:0.12});
+    document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+  } else {
+    document.querySelectorAll('.reveal').forEach(function(el){ el.classList.add('in'); });
+  }
+
+  // Contact form (client-side demo only)
+  var form = document.getElementById('contactForm');
+  var success = document.getElementById('formSuccess');
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    success.classList.add('show');
+    form.querySelectorAll('input, textarea').forEach(function(el){ el.value = ''; });
+  });
+})();
+</script>
+</body>
+</html>

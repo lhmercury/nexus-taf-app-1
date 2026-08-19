@@ -1,0 +1,19 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno (nunca subir secretos reales)
+.env
+backend/.env
+
+# Archivos cargados por los usuarios en desarrollo local
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Logs
+npm-debug.log*
+*.log
+
+# Sistema operativo / editores
+.DS_Store
+.vscode/
+.idea/

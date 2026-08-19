@@ -1,0 +1,81 @@
+
+# ============================================================
+# NEXUS-TAF · docker-compose para desarrollo y para una primera
+# puesta en producción de un solo nodo.
+#
+# Uso rápido:
+#   1) cp backend/.env.example backend/.env   (y ajusta JWT_SECRET)
+#   2) docker compose up -d --build
+#   3) docker compose exec backend npm run setup   (migra + siembra datos demo)
+#   4) abre http://localhost:8080  (sitio + app)  y  http://localhost:4000/api/health
+# ============================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nexus-taf-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nexus
+      POSTGRES_PASSWORD: nexus_pass
+      POSTGRES_DB: nexus_taf
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexus -d nexus_taf"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mongo:
+    image: mongo:4.4
+    container_name: nexus-taf-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongo", "--quiet", "--eval", "db.runCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: nexus-taf-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env
+    environment:
+      # Dentro de la red de docker compose, los servicios se resuelven por nombre.
+      POSTGRES_URL: postgresql://nexus:nexus_pass@postgres:5432/nexus_taf
+      MONGO_URL: mongodb://mongo:27017/nexus_taf
+      CORS_ORIGIN: http://localhost:8080,http://127.0.0.1:8080
+    ports:
+      - "4000:4000"
+    volumes:
+      - uploads_data:/app/uploads
+
+  frontend:
+    image: nginx:alpine
+    container_name: nexus-taf-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+
+volumes:
+  postgres_data:
+  mongo_data:
+  uploads_data:
